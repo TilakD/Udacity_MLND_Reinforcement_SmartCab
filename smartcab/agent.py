@@ -8,7 +8,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """ 
 
-    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
+    def __init__(self, env, learning=True, epsilon=1.0, alpha=0.5):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment 
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -18,7 +18,7 @@ class LearningAgent(Agent):
         self.Q = dict()          # Create a Q-table which will be a dictionary of tuples
         self.epsilon = epsilon   # Random exploration factor
         self.alpha = alpha       # Learning factor
-
+        self.counter = 1
         ###########
         ## TO DO ##
         ###########
@@ -38,10 +38,27 @@ class LearningAgent(Agent):
         ###########
         # Update epsilon using a decay function of your choice
         # Update additional class parameters as needed
+        
         # If 'testing' is True, set epsilon and alpha to 0
-
+        if testing == True:
+            self.epsilon = 0
+            self.alpha = 0
+        else:
+            self.epsilon = self.epsilon - 0.05
+            self.counter += 1
+        
         return None
 
+        
+    def default_dictionary(self):
+        return dict({
+            'left': 0.0,
+            'right': 0.0,
+            'forward': 0.0,
+            None: 0.0
+            })
+        
+        
     def build_state(self):
         """ The build_state function is called when the agent requests data from the 
             environment. The next waypoint, the intersection inputs, and the deadline 
@@ -57,6 +74,12 @@ class LearningAgent(Agent):
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
         state = (inputs['light'], inputs['left'], inputs['oncoming'], waypoint)
+        
+        # When learning, check if the state is in the Q-table
+        #   If it is not, create a dictionary in the Q-table for the current 'state'
+        #   For each action, set the Q-value for the state-action pair to 0
+        if self.learning == True and state not in self.Q:
+            self.Q[state] = self.default_dictionary()
 
         return state
 
@@ -69,9 +92,12 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Calculate the maximum Q-value of all actions for a given state
-
-        maxQ = None
-
+        if state not in self.Q.keys():
+            self.Q = self.default_dictionary()
+            
+        actionsForState = self.Q[state]
+        maxQ = max(actionsForState.values())
+        
         return maxQ 
 
 
@@ -84,7 +110,8 @@ class LearningAgent(Agent):
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
-
+        if self.learning == True and state not in self.Q:
+            self.Q[state] = self.default_dictionary()
         return
 
 
@@ -101,6 +128,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # When not learning, choose a random action
+            
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
  
@@ -117,6 +145,8 @@ class LearningAgent(Agent):
         ###########
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
+        if self.learning == True and state not in self.Q:
+            self.Q[state] = self.default_dictionary()
 
         return
 
@@ -153,7 +183,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent)
+    agent = env.create_agent(LearningAgent,learning = True)
     
     ##############
     # Follow the driving agent
@@ -168,7 +198,7 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  -  set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env,update_delay=0.01,log_metrics=True, display=False)
+    sim = Simulator(env,update_delay=0.001,log_metrics=True, display=False)
     
     ##############
     # Run the simulator
