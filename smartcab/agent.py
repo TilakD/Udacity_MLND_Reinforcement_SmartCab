@@ -18,7 +18,7 @@ class LearningAgent(Agent):
         self.Q = dict()          # Create a Q-table which will be a dictionary of tuples
         self.epsilon = epsilon   # Random exploration factor
         self.alpha = alpha       # Learning factor
-        self.counter = 1
+        self.trial = 0          # Number of trials performed
         ###########
         ## TO DO ##
         ###########
@@ -44,8 +44,8 @@ class LearningAgent(Agent):
             self.epsilon = 0
             self.alpha = 0
         else:
-            self.epsilon = self.epsilon - 0.05
-            self.counter += 1
+            self.epsilon = self.epsilon - 0.05  # linear function
+            self.trial += 1     
         
         return None
 
@@ -91,13 +91,9 @@ class LearningAgent(Agent):
         ########### 
         ## TO DO ##
         ###########
-        # Calculate the maximum Q-value of all actions for a given state
-        if state not in self.Q.keys():
-            self.Q = self.default_dictionary()
-            
-        actionsForState = self.Q[state]
-        maxQ = max(actionsForState.values())
-        
+        # Calculate the maximum Q-value of all actions for a given state           
+        maxAction = max(self.Q[state], key = lambda x: self.Q[state][x])
+        maxQ = self.Q[state][maxAction]
         return maxQ 
 
 
@@ -128,9 +124,17 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # When not learning, choose a random action
+        if self.learning == True and state not in self.Q:
+            self.Q[state] = self.default_dictionary()
             
         # When learning, choose a random action with 'epsilon' probability
         #   Otherwise, choose an action with the highest Q-value for the current state
+        random_pick = self.epsilon >= random.random()
+        
+        if self.learning == True:
+            action = random.choice(self.valid_actions)
+        else:
+            
  
         return action
 
